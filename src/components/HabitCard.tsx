@@ -57,14 +57,17 @@ export function HabitCard({ habit, onUpdate }: HabitCardProps) {
       if (error) throw error;
 
       // Log the habit update
-      await supabase
-        .from('habit_logs')
-        .insert({
-          habit_id: habit.id,
-          user_id: habit.user_id,
-          value: increment ? 1 : -1,
-          logged_date: new Date().toISOString().split('T')[0]
-        });
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        await supabase
+          .from('habit_logs')
+          .insert({
+            habit_id: habit.id,
+            user_id: user.id,
+            value: increment ? 1 : -1,
+            logged_date: new Date().toISOString().split('T')[0]
+          });
+      }
 
       onUpdate();
       
