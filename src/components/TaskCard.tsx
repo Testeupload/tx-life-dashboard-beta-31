@@ -1,16 +1,14 @@
+
 import { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Checkbox } from '@/components/ui/checkbox';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
-import { format } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
+import { CheckCircle, Clock, AlertCircle } from 'lucide-react';
 
 interface Task {
-  id: string;  
+  id: string;
   title: string;
   description: string;
   category: string;
@@ -25,42 +23,56 @@ interface TaskCardProps {
   onUpdate: () => void;
 }
 
-const priorityConfig = {
-  low: { label: 'Baixa', variant: 'secondary' as const, color: '#6B7280' },
-  medium: { label: 'Média', variant: 'outline' as const, color: '#F59E0B' },
-  high: { label: 'Alta', variant: 'destructive' as const, color: '#EF4444' },
-  urgent: { label: 'Urgente', variant: 'destructive' as const, color: '#DC2626' }
-};
-
 export function TaskCard({ task, onUpdate }: TaskCardProps) {
   const [loading, setLoading] = useState(false);
-  const { user } = useAuth();
   const { toast } = useToast();
 
-  const handleStatusChange = async (completed: boolean) => {
-    if (!user || loading) return;
-    
+  const completeTask = async () => {
     setLoading(true);
     try {
-      const newStatus = completed ? 'completed' : 'pending';
-      const completedAt = completed ? new Date().toISOString() : null;
-      
       const { error } = await supabase
         .from('tasks')
         .update({ 
-          status: newStatus,
-          completed_at: completedAt
+          status: 'completed',
+          completed_at: new Date().toISOString()
         })
         .eq('id', task.id);
 
       if (error) throw error;
 
-      toast({
-        title: completed ? "✅ Tarefa concluída!" : "📝 Tarefa reaberta",
-        description: task.title
-      });
-      
       onUpdate();
+      
+      toast({
+        title: "Tarefa concluída! 🎉",
+        description: `"${task.title}" foi marcada como concluída.`
+      });
+    } catch (error: any) {
+      toast({
+        title: "Erro ao completar tarefa",
+        description: error.message,
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const updateStatus = async (newStatus: 'in_progress' | 'cancelled') => {
+    setLoading(true);
+    try {
+      const { error } = await supabase
+        .from('tasks')
+        .update({ status: newStatus })
+        .eq('id', task.id);
+
+      if (error) throw error;
+
+      onUpdate();
+      
+      toast({
+        title: "Tarefa atualizada",
+        description: `Status alterado para: ${newStatus === 'in_progress' ? 'Em Progresso' : 'Cancelada'}`
+      });
     } catch (error: any) {
       toast({
         title: "Erro ao atualizar tarefa",
@@ -72,82 +84,106 @@ export function TaskCard({ task, onUpdate }: TaskCardProps) {
     }
   };
 
-  const formatDuration = (minutes: number) => {
-    if (minutes < 60) return `${minutes}min`;
-    const hours = Math.floor(minutes / 60);
-    const mins = minutes % 60;
-    return mins > 0 ? `${hours}h ${mins}min` : `${hours}h`;
+  const getPriorityColor = () => {
+    switch (task.priority) {
+      case 'urgent': return 'bg-red-500';
+      case 'high': return 'bg-orange-500';
+      case 'medium': return 'bg-yellow-500';
+      case 'low': return 'bg-green-500';
+      default: return 'bg-gray-500';
+    }
   };
 
-  const isOverdue = () => {
-    if (!task.due_date || task.status === 'completed') return false;
-    return new Date(task.due_date) < new Date();
+  const getPriorityIcon = () => {
+    switch (task.priority) {
+      case 'urgent':
+      case 'high':
+        return <AlertCircle className="w-4 h-4" />;
+      default:
+        return <Clock className="w-4 h-4" />;
+    }
   };
 
-  const isCompleted = task.status === 'completed';
-  const priorityInfo = priorityConfig[task.priority];
+  const formatDueDate = () => {
+    if (!task.due_date) return null;
+    const date = new Date(task.due_date);
+    const today = new Date();
+    const isOverdue = date < today && task.status !== 'completed';
+    
+    return (
+      <div className={`text-sm ${isOverdue ? 'text-red-500' : 'text-muted-foreground'}`}>
+        {isOverdue ? '⚠️ Venceu em: ' : '📅 Vence em: '}
+        {date.toLocaleDateString('pt-BR')}
+      </div>
+    );
+  };
 
   return (
-    <Card className={`shadow-card hover:shadow-card-hover transition-all duration-300 animate-fade-in ${
-      isCompleted ? 'bg-success-light border-success/20' : ''
-    } ${isOverdue() ? 'border-destructive/40' : ''}`}>
+    <Card className="shadow-card hover:shadow-card-hover transition-shadow">
       <CardHeader className="pb-3">
-        <div className="flex items-start gap-3">
-          <Checkbox
-            checked={isCompleted}
-            onCheckedChange={handleStatusChange}
-            disabled={loading}
-            className="mt-1"
-          />
-          <div className="flex-1 space-y-2">
-            <CardTitle className={`text-lg leading-tight ${
-              isCompleted ? 'line-through text-muted-foreground' : ''
-            }`}>
+        <div className="flex items-start justify-between">
+          <div className="flex-1">
+            <CardTitle className="text-lg flex items-center gap-2">
               {task.title}
+              {getPriorityIcon()}
             </CardTitle>
-            
-            <div className="flex flex-wrap items-center gap-2">
-              <Badge variant={priorityInfo.variant} className="text-xs">
-                {priorityInfo.label}
-              </Badge>
-              
-              {task.category && (
-                <Badge variant="outline" className="text-xs">
-                  {task.category}
-                </Badge>
-              )}
-              
-              {task.estimated_duration && (
-                <Badge variant="secondary" className="text-xs">
-                  ⏱️ {formatDuration(task.estimated_duration)}
-                </Badge>
-              )}
-              
-              {isOverdue() && (
-                <Badge variant="destructive" className="text-xs">
-                  ⚠️ Atrasada
-                </Badge>
-              )}
-            </div>
+            {task.description && (
+              <CardDescription className="mt-1">{task.description}</CardDescription>
+            )}
           </div>
+        </div>
+        
+        <div className="flex flex-wrap gap-2 mt-3">
+          <Badge 
+            variant="secondary" 
+            className={`${getPriorityColor()} text-white`}
+          >
+            {task.priority === 'urgent' ? 'Urgente' : 
+             task.priority === 'high' ? 'Alta' :
+             task.priority === 'medium' ? 'Média' : 'Baixa'}
+          </Badge>
+          
+          {task.category && (
+            <Badge variant="outline">
+              {task.category}
+            </Badge>
+          )}
+          
+          {task.estimated_duration && (
+            <Badge variant="outline">
+              {task.estimated_duration}min
+            </Badge>
+          )}
         </div>
       </CardHeader>
       
-      <CardContent className="pt-0">
-        {task.description && (
-          <p className={`text-sm mb-3 ${
-            isCompleted ? 'text-muted-foreground' : 'text-foreground'
-          }`}>
-            {task.description}
-          </p>
-        )}
+      <CardContent className="space-y-3">
+        {formatDueDate()}
         
-        {task.due_date && (
-          <div className="text-sm text-muted-foreground">
-            <span className="font-medium">Prazo:</span>{' '}
-            {format(new Date(task.due_date), 'dd/MM/yyyy HH:mm', { locale: ptBR })}
-          </div>
-        )}
+        <div className="flex gap-2">
+          {task.status === 'pending' && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => updateStatus('in_progress')}
+              disabled={loading}
+              className="flex-1"
+            >
+              Iniciar
+            </Button>
+          )}
+          
+          <Button
+            variant="hero"
+            size="sm"
+            onClick={completeTask}
+            disabled={loading}
+            className="flex-1"
+          >
+            <CheckCircle className="w-4 h-4 mr-1" />
+            Concluir
+          </Button>
+        </div>
       </CardContent>
     </Card>
   );

@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
@@ -20,6 +21,7 @@ interface Habit {
   unit: string;
   icon: string;
   color: string;
+  user_id: string;
 }
 
 interface Task {
@@ -34,7 +36,7 @@ interface Task {
 }
 
 export default function Dashboard() {
-  const { user, signOut } = useAuth();
+  const { user, signOut, loading: authLoading } = useAuth();
   const { toast } = useToast();
   const [habits, setHabits] = useState<Habit[]>([]);
   const [tasks, setTasks] = useState<Task[]>([]);
@@ -42,15 +44,17 @@ export default function Dashboard() {
 
   // Proteção de rota - redirecionar para auth se não estiver logado
   useEffect(() => {
-    if (!user && !loading) {
+    if (!authLoading && !user) {
       window.location.href = '/auth';
     }
-  }, [user, loading]);
+  }, [user, authLoading]);
 
   const fetchData = async () => {
     if (!user) return;
     
     try {
+      console.log('Fetching data for user:', user.id);
+      
       // Buscar hábitos
       const { data: habitsData, error: habitsError } = await supabase
         .from('habits')
@@ -59,7 +63,10 @@ export default function Dashboard() {
         .eq('is_active', true)
         .order('created_at', { ascending: true });
 
-      if (habitsError) throw habitsError;
+      if (habitsError) {
+        console.error('Habits error:', habitsError);
+        throw habitsError;
+      }
 
       // Buscar tarefas pendentes e em progresso
       const { data: tasksData, error: tasksError } = await supabase
@@ -69,11 +76,18 @@ export default function Dashboard() {
         .in('status', ['pending', 'in_progress'])
         .order('due_date', { ascending: true });
 
-      if (tasksError) throw tasksError;
+      if (tasksError) {
+        console.error('Tasks error:', tasksError);
+        throw tasksError;
+      }
 
+      console.log('Fetched habits:', habitsData?.length || 0);
+      console.log('Fetched tasks:', tasksData?.length || 0);
+      
       setHabits((habitsData as Habit[]) || []);
       setTasks((tasksData as Task[]) || []);
     } catch (error: any) {
+      console.error('Error fetching data:', error);
       toast({
         title: "Erro ao carregar dados",
         description: error.message,
@@ -85,13 +99,9 @@ export default function Dashboard() {
   };
 
   useEffect(() => {
-    fetchData();
-  }, [user]);
-
-  // Auto-refresh a cada 30 segundos
-  useEffect(() => {
-    const interval = setInterval(fetchData, 30000);
-    return () => clearInterval(interval);
+    if (user) {
+      fetchData();
+    }
   }, [user]);
 
   const handleSignOut = async () => {
@@ -120,7 +130,7 @@ export default function Dashboard() {
     return Math.round((completed / habits.length) * 100);
   };
 
-  if (loading) {
+  if (authLoading || loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="text-center space-y-4">
@@ -129,6 +139,10 @@ export default function Dashboard() {
         </div>
       </div>
     );
+  }
+
+  if (!user) {
+    return null; // Will redirect via useEffect
   }
 
   return (
@@ -203,9 +217,6 @@ export default function Dashboard() {
         <section className="space-y-6">
           <div className="flex items-center justify-between">
             <h2 className="text-3xl font-bold tracking-tight">Meus Hábitos</h2>
-            <Button variant="outline" size="sm">
-              Adicionar Hábito
-            </Button>
           </div>
           
           {habits.length > 0 ? (
@@ -221,13 +232,15 @@ export default function Dashboard() {
           ) : (
             <Card className="shadow-card">
               <CardHeader>
-                <CardTitle>Nenhum hábito encontrado</CardTitle>
+                <CardTitle>Seus hábitos estão sendo criados!</CardTitle>
                 <CardDescription>
-                  Parece que você ainda não tem hábitos configurados. Que tal começar com alguns padrões?
+                  Estamos configurando seus hábitos padrão. Recarregue a página em alguns segundos.
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <Button variant="hero">Adicionar Meu Primeiro Hábito</Button>
+                <Button variant="hero" onClick={fetchData}>
+                  Atualizar Dados
+                </Button>
               </CardContent>
             </Card>
           )}
@@ -237,9 +250,6 @@ export default function Dashboard() {
         <section className="space-y-6">
           <div className="flex items-center justify-between">
             <h2 className="text-3xl font-bold tracking-tight">Tarefas de Hoje</h2>
-            <Button variant="outline" size="sm">
-              Nova Tarefa
-            </Button>
           </div>
           
           {tasks.length > 0 ? (
@@ -278,7 +288,7 @@ export default function Dashboard() {
             </CardHeader>
             <CardContent>
               <p className="text-sm text-muted-foreground">
-                Próximo lembrete em: <span className="font-medium">35 minutos</span>
+                Sistema de lembretes configurado e ativo para seus hábitos!
               </p>
             </CardContent>
           </Card>
