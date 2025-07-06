@@ -11,7 +11,7 @@ import heroImage from '@/assets/hero-dashboard.jpg';
 
 export default function Auth() {
   const [loading, setLoading] = useState(false);
-  const { signIn } = useAuth();
+  const { signIn, signUp } = useAuth();
   const { toast } = useToast();
 
   const handleSignIn = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -22,32 +22,12 @@ export default function Auth() {
     const email = formData.get('email') as string;
     const password = formData.get('password') as string;
 
-    // Only allow specific hardcoded accounts
-    const validAccounts = [
-      { email: 'tx@gmail.com', password: 'tx' },
-      { email: 'hx@gmail.com', password: 'hx' }
-    ];
-
-    const validAccount = validAccounts.find(
-      acc => acc.email.toLowerCase() === email.toLowerCase() && acc.password === password
-    );
-
-    if (!validAccount) {
-      toast({
-        title: "Acesso Negado",
-        description: "Credenciais inválidas. Sistema privado.",
-        variant: "destructive"
-      });
-      setLoading(false);
-      return;
-    }
-
     const { error } = await signIn(email, password);
     
     if (error) {
       toast({
         title: "Erro no login",
-        description: "Tente novamente em alguns segundos.",
+        description: "Verifique suas credenciais e tente novamente.",
         variant: "destructive"
       });
     } else {
@@ -58,6 +38,23 @@ export default function Auth() {
     }
     
     setLoading(false);
+  };
+
+  // Função para criar usuários hardcoded se não existirem
+  const createHardcodedUsers = async () => {
+    const users = [
+      { email: 'tx@gmail.com', password: 'tx', name: 'TX' },
+      { email: 'hx@gmail.com', password: 'hx', name: 'HX' }
+    ];
+
+    for (const user of users) {
+      try {
+        await signUp(user.email, user.password, user.name);
+      } catch (error) {
+        // Usuário já existe ou outro erro, continuar
+        console.log(`Usuário ${user.email} já existe ou erro:`, error);
+      }
+    }
   };
 
   return (
@@ -126,7 +123,7 @@ export default function Auth() {
                       id="signin-email"
                       name="email"
                       type="email"
-                      placeholder="tx@gmail.com"
+                      placeholder="tx@gmail.com ou hx@gmail.com"
                       required
                       disabled={loading}
                       className="h-12 text-base"
@@ -161,9 +158,22 @@ export default function Auth() {
                       'ACESSAR SISTEMA'
                     )}
                   </Button>
-                  <div className="text-xs text-center text-muted-foreground space-y-1">
-                    <p>🔒 Sistema de alta segurança</p>
-                    <p>📈 Controle de performance profissional</p>
+                  <div className="text-xs text-center text-muted-foreground space-y-2">
+                    <div className="flex justify-center">
+                      <Button 
+                        type="button" 
+                        variant="ghost" 
+                        size="sm"
+                        onClick={createHardcodedUsers}
+                        className="text-primary hover:text-primary/80"
+                      >
+                        🔧 Configurar Usuários do Sistema
+                      </Button>
+                    </div>
+                    <div className="space-y-1">
+                      <p>🔒 Sistema de alta segurança</p>
+                      <p>📈 Controle de performance profissional</p>
+                    </div>
                   </div>
                 </form>
               </CardContent>
