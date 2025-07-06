@@ -3,11 +3,14 @@ import { useEffect, useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { HabitCard } from '@/components/HabitCard';
 import { TaskCard } from '@/components/TaskCard';
+import { Ranking } from '@/components/Ranking';
+import { HabitCalendar } from '@/components/HabitCalendar';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2 } from 'lucide-react';
+import { Loader2, LogOut, Trophy, Calendar, Target, Flame } from 'lucide-react';
 
 interface Habit {
   id: string;
@@ -146,162 +149,231 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-background to-accent/20">
+    <div className="min-h-screen bg-gradient-primary">
       {/* Header */}
-      <header className="border-b bg-card/80 backdrop-blur-sm sticky top-0 z-10">
-        <div className="container flex h-16 items-center justify-between">
-          <div className="flex items-center space-x-4">
-            <h1 className="text-2xl font-bold">
-              <span className="bg-gradient-primary bg-clip-text text-transparent">
-                TX Life
-              </span>
-            </h1>
+      <header className="border-b border-primary/20 bg-card/90 backdrop-blur-sm sticky top-0 z-10">
+        <div className="container flex h-20 items-center justify-between">
+          <div className="flex items-center space-x-6">
+            <div className="flex items-center gap-3">
+              <span className="text-3xl">⚡</span>
+              <h1 className="text-3xl font-bold">
+                <span className="bg-gradient-gold bg-clip-text text-transparent">
+                  TX LIFE
+                </span>
+              </h1>
+            </div>
             <div className="hidden sm:block">
-              <p className="text-sm text-muted-foreground">
-                {getGreeting()}, <span className="font-medium">{user?.user_metadata?.full_name || 'Usuário'}</span>!
+              <p className="text-base font-medium">
+                {getGreeting()}, <span className="text-primary font-bold">{user?.user_metadata?.full_name || 'OPERADOR'}</span>
               </p>
             </div>
           </div>
-          <Button onClick={handleSignOut} variant="outline" size="sm">
-            Sair
+          <Button onClick={handleSignOut} variant="outline" size="lg" className="gap-2">
+            <LogOut className="w-4 h-4" />
+            SAIR
           </Button>
         </div>
       </header>
 
       <div className="container py-8 space-y-8">
-        {/* Resumo Geral */}
-        <div className="grid gap-6 md:grid-cols-3">
-          <Card className="shadow-card">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Hábitos de Hoje</CardTitle>
-              <span className="text-2xl">🎯</span>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{getHabitsProgress()}%</div>
-              <p className="text-xs text-muted-foreground">
-                {habits.filter(h => h.current_value >= h.target_value || h.streak_days >= h.target_value).length} de {habits.length} completos
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card className="shadow-card">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Tarefas Pendentes</CardTitle>
-              <span className="text-2xl">📝</span>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{tasks.length}</div>
-              <p className="text-xs text-muted-foreground">
-                {tasks.filter(t => t.priority === 'high' || t.priority === 'urgent').length} alta prioridade
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card className="shadow-card">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Sequência Atual</CardTitle>
-              <span className="text-2xl">🔥</span>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">
-                {Math.max(...habits.map(h => h.streak_days), 0)}
+        {/* Stats Overview */}
+        <div className="grid gap-6 md:grid-cols-4">
+          <Card className="shadow-card bg-gradient-gold/10 border-primary/30">
+            <CardContent className="p-6">
+              <div className="flex items-center gap-4">
+                <Target className="w-8 h-8 text-primary" />
+                <div>
+                  <div className="text-3xl font-bold text-primary">{getHabitsProgress()}%</div>
+                  <div className="text-sm font-medium">CONCLUSÃO DIÁRIA</div>
+                </div>
               </div>
-              <p className="text-xs text-muted-foreground">
-                dias consecutivos
-              </p>
+            </CardContent>
+          </Card>
+
+          <Card className="shadow-card">
+            <CardContent className="p-6">
+              <div className="flex items-center gap-4">
+                <Calendar className="w-8 h-8 text-primary" />
+                <div>
+                  <div className="text-3xl font-bold">{tasks.length}</div>
+                  <div className="text-sm font-medium">TAREFAS ATIVAS</div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="shadow-card">
+            <CardContent className="p-6">
+              <div className="flex items-center gap-4">
+                <Flame className="w-8 h-8 text-primary" />
+                <div>
+                  <div className="text-3xl font-bold">
+                    {Math.max(...habits.map(h => h.streak_days), 0)}
+                  </div>
+                  <div className="text-sm font-medium">SEQUÊNCIA ATUAL</div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="shadow-card">
+            <CardContent className="p-6">
+              <div className="flex items-center gap-4">
+                <Trophy className="w-8 h-8 text-primary" />
+                <div>
+                  <div className="text-3xl font-bold">
+                    {habits.filter(h => h.current_value >= h.target_value || h.streak_days >= h.target_value).length}
+                  </div>
+                  <div className="text-sm font-medium">HÁBITOS CONCLUÍDOS</div>
+                </div>
+              </div>
             </CardContent>
           </Card>
         </div>
 
-        {/* Hábitos */}
-        <section className="space-y-6">
-          <div className="flex items-center justify-between">
-            <h2 className="text-3xl font-bold tracking-tight">Meus Hábitos</h2>
-          </div>
-          
-          {habits.length > 0 ? (
-            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-              {habits.map((habit) => (
-                <HabitCard 
-                  key={habit.id} 
-                  habit={habit} 
-                  onUpdate={fetchData}
-                />
-              ))}
+        {/* Main Content Tabs */}
+        <Tabs defaultValue="dashboard" className="space-y-6">
+          <TabsList className="grid w-full grid-cols-4 h-14 p-1 bg-card/50">
+            <TabsTrigger value="dashboard" className="text-base font-semibold">
+              🏠 DASHBOARD
+            </TabsTrigger>
+            <TabsTrigger value="ranking" className="text-base font-semibold">  
+              🏆 RANKING
+            </TabsTrigger>
+            <TabsTrigger value="calendar" className="text-base font-semibold">
+              📅 CALENDÁRIO
+            </TabsTrigger>
+            <TabsTrigger value="analytics" className="text-base font-semibold">
+              📊 RELATÓRIOS
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="dashboard">
+            <div className="space-y-8">
+              {/* Hábitos */}
+              <section className="space-y-6">
+                <div className="flex items-center justify-between">
+                  <h2 className="text-4xl font-bold tracking-tight flex items-center gap-3">
+                    <span className="text-primary">🎯</span>
+                    HÁBITOS ATIVOS
+                  </h2>
+                </div>
+                
+                {habits.length > 0 ? (
+                  <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+                    {habits.map((habit) => (
+                      <HabitCard 
+                        key={habit.id} 
+                        habit={habit} 
+                        onUpdate={fetchData}
+                      />
+                    ))}
+                  </div>
+                ) : (
+                  <Card className="shadow-card">
+                    <CardHeader>
+                      <CardTitle className="text-2xl">Sistema Inicializando</CardTitle>
+                      <CardDescription className="text-base">
+                        Configurando hábitos padrão para sua conta...
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <Button variant="hero" onClick={fetchData} size="lg">
+                        ATUALIZAR SISTEMA
+                      </Button>
+                    </CardContent>
+                  </Card>
+                )}
+              </section>
+
+              {/* Tarefas */}
+              <section className="space-y-6">
+                <div className="flex items-center justify-between">
+                  <h2 className="text-4xl font-bold tracking-tight flex items-center gap-3">
+                    <span className="text-primary">📋</span>
+                    TAREFAS PRIORITÁRIAS
+                  </h2>
+                </div>
+                
+                {tasks.length > 0 ? (
+                  <div className="grid gap-4 md:grid-cols-2">
+                    {tasks.slice(0, 6).map((task) => (
+                      <TaskCard 
+                        key={task.id} 
+                        task={task} 
+                        onUpdate={fetchData}
+                      />
+                    ))}
+                  </div>
+                ) : (
+                  <Card className="shadow-card">
+                    <CardHeader>
+                      <CardTitle className="text-2xl flex items-center gap-2">
+                        ✅ Todas as Tarefas Concluídas
+                      </CardTitle>
+                      <CardDescription className="text-base">
+                        Excelente trabalho! Nenhuma tarefa pendente no momento.
+                      </CardDescription>
+                    </CardHeader>
+                  </Card>
+                )}
+              </section>
             </div>
-          ) : (
+          </TabsContent>
+
+          <TabsContent value="ranking">
+            <Ranking />
+          </TabsContent>
+
+          <TabsContent value="calendar">
+            <HabitCalendar />
+          </TabsContent>
+
+          <TabsContent value="analytics">
             <Card className="shadow-card">
               <CardHeader>
-                <CardTitle>Seus hábitos estão sendo criados!</CardTitle>
-                <CardDescription>
-                  Estamos configurando seus hábitos padrão. Recarregue a página em alguns segundos.
+                <CardTitle className="text-2xl flex items-center gap-2">
+                  📊 RELATÓRIOS AVANÇADOS
+                </CardTitle>
+                <CardDescription className="text-base">
+                  Análise detalhada de performance e tendências
                 </CardDescription>
               </CardHeader>
-              <CardContent>
-                <Button variant="hero" onClick={fetchData}>
-                  Atualizar Dados
-                </Button>
+              <CardContent className="space-y-6">
+                <div className="grid gap-6 md:grid-cols-2">
+                  <div className="space-y-4">
+                    <h3 className="text-xl font-bold">Performance Semanal</h3>
+                    <div className="h-32 bg-card/50 rounded-lg flex items-center justify-center">
+                      <span className="text-muted-foreground">Gráfico em desenvolvimento</span>
+                    </div>
+                  </div>
+                  <div className="space-y-4">
+                    <h3 className="text-xl font-bold">Comparativo Mensal</h3>
+                    <div className="h-32 bg-card/50 rounded-lg flex items-center justify-center">
+                      <span className="text-muted-foreground">Gráfico em desenvolvimento</span>
+                    </div>
+                  </div>
+                </div>
               </CardContent>
             </Card>
-          )}
-        </section>
+          </TabsContent>
+        </Tabs>
 
-        {/* Tarefas */}
-        <section className="space-y-6">
-          <div className="flex items-center justify-between">
-            <h2 className="text-3xl font-bold tracking-tight">Tarefas de Hoje</h2>
-          </div>
-          
-          {tasks.length > 0 ? (
-            <div className="grid gap-4 md:grid-cols-2">
-              {tasks.slice(0, 6).map((task) => (
-                <TaskCard 
-                  key={task.id} 
-                  task={task} 
-                  onUpdate={fetchData}
-                />
-              ))}
+        {/* System Status */}
+        <footer className="text-center py-8 border-t border-primary/20">
+          <div className="space-y-2">
+            <p className="text-lg font-bold text-primary">
+              TX LIFE SYSTEM - OPERACIONAL
+            </p>
+            <p className="text-sm text-muted-foreground">
+              Sistema privado de alta performance • Última sincronização: {new Date().toLocaleTimeString('pt-BR')}
+            </p>
+            <div className="flex justify-center items-center gap-4 text-xs text-muted-foreground">
+              <span>🔒 Segurança Ativa</span>
+              <span>📊 Dados Sincronizados</span>
+              <span>⚡ Performance Otimizada</span>
             </div>
-          ) : (
-            <Card className="shadow-card">
-              <CardHeader>
-                <CardTitle>Nenhuma tarefa pendente</CardTitle>
-                <CardDescription>
-                  Ótimo! Você não tem tarefas pendentes no momento. 🎉
-                </CardDescription>
-              </CardHeader>
-            </Card>
-          )}
-        </section>
-
-        {/* Lembretes */}
-        <section className="space-y-6">
-          <h2 className="text-3xl font-bold tracking-tight">Lembretes Ativos</h2>
-          <Card className="shadow-card">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                💧 Lembrete de Água
-              </CardTitle>
-              <CardDescription>
-                Você será lembrado de beber água a cada hora durante o dia.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-muted-foreground">
-                Sistema de lembretes configurado e ativo para seus hábitos!
-              </p>
-            </CardContent>
-          </Card>
-        </section>
-
-        {/* Rodapé */}
-        <footer className="text-center py-8">
-          <p className="text-sm text-muted-foreground">
-            TX Life Dashboard - Sistema privado de controle de hábitos e produtividade
-          </p>
-          <p className="text-xs text-muted-foreground mt-2">
-            Dados atualizados em tempo real • Última atualização: {new Date().toLocaleTimeString('pt-BR')}
-          </p>
+          </div>
         </footer>
       </div>
     </div>
