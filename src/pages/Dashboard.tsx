@@ -8,6 +8,9 @@ import { HabitCard } from '@/components/HabitCard';
 import { TaskCard } from '@/components/TaskCard';
 import { Ranking } from '@/components/Ranking';
 import { HabitCalendar } from '@/components/HabitCalendar';
+import { WorkoutSchedule } from '@/components/WorkoutSchedule';
+import { SeriesTracker } from '@/components/SeriesTracker';
+import { GlobalChat } from '@/components/GlobalChat';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, LogOut, Trophy, Calendar, Target, Flame } from 'lucide-react';
@@ -233,17 +236,26 @@ export default function Dashboard() {
 
         {/* Main Content Tabs */}
         <Tabs defaultValue="dashboard" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4 h-14 p-1 bg-card/50">
-            <TabsTrigger value="dashboard" className="text-base font-semibold">
+          <TabsList className="grid w-full grid-cols-7 h-14 p-1 bg-card/50">
+            <TabsTrigger value="dashboard" className="text-sm font-semibold">
               🏠 DASHBOARD
             </TabsTrigger>
-            <TabsTrigger value="ranking" className="text-base font-semibold">  
+            <TabsTrigger value="workouts" className="text-sm font-semibold">
+              💪 TREINOS
+            </TabsTrigger>
+            <TabsTrigger value="series" className="text-sm font-semibold">
+              📺 SÉRIES
+            </TabsTrigger>
+            <TabsTrigger value="chat" className="text-sm font-semibold">
+              💬 CHAT
+            </TabsTrigger>
+            <TabsTrigger value="ranking" className="text-sm font-semibold">  
               🏆 RANKING
             </TabsTrigger>
-            <TabsTrigger value="calendar" className="text-base font-semibold">
+            <TabsTrigger value="calendar" className="text-sm font-semibold">
               📅 CALENDÁRIO
             </TabsTrigger>
-            <TabsTrigger value="analytics" className="text-base font-semibold">
+            <TabsTrigger value="analytics" className="text-sm font-semibold">
               📊 RELATÓRIOS
             </TabsTrigger>
           </TabsList>
@@ -321,6 +333,18 @@ export default function Dashboard() {
             </div>
           </TabsContent>
 
+          <TabsContent value="workouts">
+            <WorkoutSchedule />
+          </TabsContent>
+
+          <TabsContent value="series">
+            <SeriesTracker />
+          </TabsContent>
+
+          <TabsContent value="chat">
+            <GlobalChat />
+          </TabsContent>
+
           <TabsContent value="ranking">
             <Ranking />
           </TabsContent>
@@ -361,7 +385,7 @@ export default function Dashboard() {
 
         {/* System Status */}
         <footer className="text-center py-8 border-t border-primary/20">
-          <div className="space-y-2">
+          <div className="space-y-3">
             <p className="text-lg font-bold text-primary">
               TX LIFE SYSTEM - OPERACIONAL
             </p>
@@ -372,6 +396,11 @@ export default function Dashboard() {
               <span>🔒 Segurança Ativa</span>
               <span>📊 Dados Sincronizados</span>
               <span>⚡ Performance Otimizada</span>
+            </div>
+            <div className="pt-2 border-t border-primary/10">
+              <p className="text-xs text-muted-foreground">
+                <span className="text-primary font-bold">Site desenvolvido por TX</span> • Sistema exclusivo para alta performance
+              </p>
             </div>
           </div>
         </footer>
